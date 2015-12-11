@@ -103,6 +103,10 @@ function create() {
     //  Our controls.
     cursors = game.input.keyboard.createCursorKeys();
     spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+    key_W = game.input.keyboard.addKey(Phaser.Keyboard.W);
+    key_A = game.input.keyboard.addKey(Phaser.Keyboard.A);
+    key_S = game.input.keyboard.addKey(Phaser.Keyboard.S);
+    key_D = game.input.keyboard.addKey(Phaser.Keyboard.D);
     
 }
 
@@ -120,14 +124,14 @@ function update() {
     //  Reset the players velocity (movement)
     player.body.velocity.x = 0;
 
-    if (cursors.left.isDown)
+    if (cursors.left.isDown || key_A.isDown)
     {
         //  Move to the left
         player.body.velocity.x = -150;
 
         player.animations.play('left');
     }
-    else if (cursors.right.isDown)
+    else if (cursors.right.isDown || key_D.isDown)
     {
         //  Move to the right
         player.body.velocity.x = 150;
@@ -143,7 +147,7 @@ function update() {
     }
     
     //  Jump
-    if (cursors.up.isDown || spacebar.isDown)
+    if (cursors.up.isDown || spacebar.isDown || key_W.isDown)
     {
         if (player.body.touching.down && jumpTimer === 0) {
             // jump is allowed to start
