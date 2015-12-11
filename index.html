@@ -170,10 +170,10 @@ function update() {
             // jump is allowed to start
             jumpTimer = 1;
             player.body.velocity.y = -400;
-        } else if (jumpTimer > 0 && jumpTimer < 31) {
+        } else if (jumpTimer > 0 && jumpTimer < 18) {
             // keep jumping higher
             jumpTimer++;
-            player.body.velocity.y = -400 - (jumpTimer * 7);
+            player.body.velocity.y = -400 - (18 - jumpTimer)*12;
         }
     } else {
         // jump button not being pressed, reset jump timer
