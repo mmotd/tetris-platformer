@@ -111,6 +111,7 @@ function create() {
 }
 
 var jumpTimer = 0;
+var accelerateTimer = 0;
 
 function update() {
 
@@ -126,20 +127,36 @@ function update() {
 
     if (cursors.left.isDown || key_A.isDown)
     {
-        //  Move to the left
-        player.body.velocity.x = -150;
-
+        if (accelerateTimer === 0) {
+            //  start move to the left
+            accelerateTimer = 1;
+            player.body.velocity.x = -150;
+        } else if (accelerateTimer > 0) {
+            // keep moving faster until max velocity
+            accelerateTimer++;
+            player.body.velocity.x = Math.max(-150 - (accelerateTimer * 3), -300);
+        }
+        
         player.animations.play('left');
-    }
-    else if (cursors.right.isDown || key_D.isDown)
+    } else if (cursors.right.isDown || key_D.isDown)
     {
-        //  Move to the right
-        player.body.velocity.x = 150;
+        if (accelerateTimer === 0) {
+            // start move to the right
+            accelerateTimer = 1;
+            player.body.velocity.x = 150;
+        } else if (accelerateTimer > 0) {
+            // keep moving faster until max velocity
+            accelerateTimer++;
+            player.body.velocity.x = Math.min(150 + (accelerateTimer * 3), 300);
+        }
+        
 
         player.animations.play('right');
     }
     else
     {
+        accelerateTimer = 0;
+        
         //  Stand still
         player.animations.stop();
 
