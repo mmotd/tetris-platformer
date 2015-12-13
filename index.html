@@ -33,12 +33,10 @@ function preload() {
 }
 
 var player;
+var omino;
 var platforms;
 var cursors;
-
-var tetrominos;
 var baddie;
-
 var stars;
 var score = 0;
 var scoreText;
@@ -79,6 +77,9 @@ function create() {
     player.animations.add('left', [0, 1, 2, 3], 10, true); //  Our two animations, walking left and right.
     player.animations.add('right', [5, 6, 7, 8], 10, true);
     
+    /** Omino **/
+    omino = game.add.sprite(300, 0, 'tetromino');
+    
     /** Baddie **/
     baddie = game.add.sprite(game.world.width - 200, 0, 'baddie');
     game.physics.arcade.enable(baddie);
@@ -93,11 +94,6 @@ function create() {
     stars.enableBody = true; //  We will enable physics for any star that is created in this group
     //  Here we'll create 12 of them evenly spaced apart
     for (var i = 0; i < 12; i++) { createStar(i * 70, 0); }
-    
-    /** Tetrominos **/
-    tetrominos = game.add.group();
-    tetrominos.enableBody = true;
-    tetromino = createTetromino();
 
     /** Score **/
     scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
@@ -110,6 +106,11 @@ function create() {
     key_S = game.input.keyboard.addKey(Phaser.Keyboard.S);
     key_D = game.input.keyboard.addKey(Phaser.Keyboard.D);
     
+    cursors.left.onDown.add(function() { omino.x -= 32; }, this);
+    cursors.right.onDown.add(function() { omino.x += 32; }, this);
+    cursors.down.onDown.add(function() { omino.y += 32; }, this);
+    //@TODO spacebar.onDown.add(function() { /* instant drop */ }, this);
+    
     /** Loop **/
     game.time.events.loop(Phaser.Timer.SECOND, eventLoop, this);
     
@@ -117,6 +118,7 @@ function create() {
 
 function eventLoop() {
     counter++;
+    omino.y += 32;
 
     if (counter % 2 === 0) {
         var i = Math.floor(Math.random() * 12);
@@ -137,34 +139,14 @@ function update() {
     game.physics.arcade.collide(player, platforms);
     game.physics.arcade.collide(baddie, platforms);
     game.physics.arcade.collide(stars, platforms);
-    game.physics.arcade.collide(tetrominos, player);
-    game.physics.arcade.overlap(baddie, tetrominos, baddieDie);
-
+    if (omino.overlap(baddie)) { baddieDie(baddie, omino); }
     
     game.physics.arcade.overlap(player, stars, collectStar, null, this);
     game.physics.arcade.overlap(player, baddie, playerDie, null, this);
-    
-    game.physics.arcade.overlap(tetromino, platforms, tetrominoFreeze, null, this);
-    game.physics.arcade.collide(tetromino, tetrominos, tetrominoFreeze);
 
     //  Reset the players velocity (movement)
     player.body.velocity.x = 0;
     game.physics.arcade.moveToObject(baddie, player);
-    
-    /** Move Tetronimo **/
-    if (cursors.left.isDown) {
-        tetromino.body.velocity.x = -150;
-    } else if (cursors.right.isDown) {
-        tetromino.body.velocity.x = 150;
-    } else {
-        tetromino.body.velocity.x = 0;
-    }
-    
-    if (spacebar.isDown) {
-        tetromino.body.velocity.y = 1000; //@TODO should instead totally drop down and become immovable and next tetronimo should begin
-    } else {
-        tetromino.body.velocity.y = 100;
-    }
 
     /** Move Player **/
     if (key_A.isDown) {
@@ -177,9 +159,8 @@ function update() {
             accelerateTimer++;
             player.body.velocity.x = Math.max(-150 - (accelerateTimer * 3), -300);
         }
-        
         player.animations.play('left');
-    } else if ( key_D.isDown) {
+    } else if (key_D.isDown) {
         if (accelerateTimer === 0) {
             // start move to the right
             accelerateTimer = 1;
@@ -189,17 +170,10 @@ function update() {
             accelerateTimer++;
             player.body.velocity.x = Math.min(150 + (accelerateTimer * 3), 300);
         }
-        
-
         player.animations.play('right');
-    }
-    else
-    {
+    } else {
         accelerateTimer = 0;
-        
-        //  Stand still
-        player.animations.stop();
-
+        player.animations.stop(); //  Stand still
         player.frame = 4;
     }
     
@@ -232,36 +206,16 @@ function createStar(x, y) {
     star.body.bounce.y = 0.7 + Math.random() * 0.2;
 }
 
-function createTetromino() {
-    tetromino = tetrominos.create(400, 0, 'tetromino');
-    tetromino.body.gravity.y = 25;
-    return tetromino;
-}
-
 function collectStar (player, star) {
-    
-    // Removes the star from the screen
     star.kill();
-
-    //  Add and update the score
+    
     score += 10;
     scoreText.text = 'Score: ' + score;
-
 }
 
-function playerDie (player, baddie) {
-    player.kill();
-}
+function playerDie (player, baddie) { player.kill(); }
 
-function baddieDie (baddie, tetromino) {
-    baddie.kill();
-}
-
-function tetrominoFreeze (tetromino, foo) {
-    tetromino.body.static = true;
-    tetromino.body.moves = false;
-    createTetromino();
-}
+function baddieDie (baddie, tetromino) { baddie.kill(); }
 
 </script>
 
