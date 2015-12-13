@@ -14,14 +14,21 @@
 
 <script type="text/javascript">
 
+// @TODO: tetronimos should be more like tetris
+
 var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
 
+/**
+ * Preload
+ **/
 function preload() {
 
     game.load.image('sky', 'assets/sky.png');
     game.load.image('ground', 'assets/platform.png');
     game.load.image('star', 'assets/star.png');
     game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+    game.load.image('tetromino', 'assets/tetromino.png');
+    game.load.spritesheet('baddie', 'assets/baddie.png', 32, 32);
 
 }
 
@@ -29,73 +36,73 @@ var player;
 var platforms;
 var cursors;
 
+var tetrominos;
+var baddie;
+
 var stars;
 var score = 0;
 var scoreText;
 
 var counter = 0;
 
+/**
+ * Create
+ **/
 function create() {
 
-    //  We're going to be using physics, so enable the Arcade Physics system
-    game.physics.startSystem(Phaser.Physics.ARCADE);
+    /** Physics **/
+    game.physics.startSystem(Phaser.Physics.ARCADE); //  We're going to be using physics, so enable the Arcade Physics system
 
-    //  A simple background for our game
+    /** Background **/
     game.add.sprite(0, 0, 'sky');
 
-    //  The platforms group contains the ground and the 2 ledges we can jump on
-    platforms = game.add.group();
+    /** Platforms **/
+    platforms = game.add.group(); //  The platforms group contains the ground and the 2 ledges we can jump on
+    platforms.enableBody = true; //  We will enable physics for any object that is created in this group
 
-    //  We will enable physics for any object that is created in this group
-    platforms.enableBody = true;
+    var ground = platforms.create(0, game.world.height - 64, 'ground'); // Here we create the ground.
+    ground.scale.setTo(2, 2); //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
+    ground.body.immovable = true; //  This stops it from falling away when you jump on it
 
-    // Here we create the ground.
-    var ground = platforms.create(0, game.world.height - 64, 'ground');
-
-    //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-    ground.scale.setTo(2, 2);
-
-    //  This stops it from falling away when you jump on it
-    ground.body.immovable = true;
-
-    //  Now let's create two ledges
-    var ledge = platforms.create(400, 400, 'ground');
+    var ledge = platforms.create(400, 400, 'ground'); //  Now let's create two ledges
     ledge.body.immovable = true;
 
     ledge = platforms.create(-150, 250, 'ground');
     ledge.body.immovable = true;
 
-    // The player and its settings
-    player = game.add.sprite(32, game.world.height - 150, 'dude');
-
-    //  We need to enable physics on the player
-    game.physics.arcade.enable(player);
-
-    //  Player physics properties. Give the little guy a slight bounce.
-    player.body.bounce.y = 0.2;
+    /** Player **/
+    player = game.add.sprite(32, game.world.height - 150, 'dude'); // The player and its settings
+    game.physics.arcade.enable(player); //  We need to enable physics on the player
+    player.body.bounce.y = 0.2; //  Player physics properties. Give the little guy a slight bounce.
     player.body.gravity.y = 1500;
     player.body.collideWorldBounds = true;
-
-    //  Our two animations, walking left and right.
-    player.animations.add('left', [0, 1, 2, 3], 10, true);
+    player.animations.add('left', [0, 1, 2, 3], 10, true); //  Our two animations, walking left and right.
     player.animations.add('right', [5, 6, 7, 8], 10, true);
+    
+    /** Baddie **/
+    baddie = game.add.sprite(game.world.width - 200, 0, 'baddie');
+    game.physics.arcade.enable(baddie);
+    baddie.body.bounce.y = 0.4;
+    baddie.body.gravity.y = 1000;
+    baddie.body.collideWorldBounds = true;
+    baddie.animations.add('left', [0, 1], 4, true);
+    baddie.animations.add('right', [3, 2], 4, true);
 
-    //  Finally some stars to collect
-    stars = game.add.group();
-
-    //  We will enable physics for any star that is created in this group
-    stars.enableBody = true;
-
+    /** Stars **/
+    stars = game.add.group(); //  Finally some stars to collect
+    stars.enableBody = true; //  We will enable physics for any star that is created in this group
     //  Here we'll create 12 of them evenly spaced apart
-    for (var i = 0; i < 12; i++)
-    {
-        createStar(i * 70, 0);
-    }
+    for (var i = 0; i < 12; i++) { createStar(i * 70, 0); }
+    
+    /** Tetrominos **/
+    tetrominos = game.add.group();
+    tetrominos.enableBody = true;
+    tetromino = createTetromino();
 
-    //  The score
+    /** Score **/
     scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
 
-    //  Our controls.
+    /** Controls **/
     cursors = game.input.keyboard.createCursorKeys();
     spacebar = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
     key_W = game.input.keyboard.addKey(Phaser.Keyboard.W);
@@ -103,21 +110,24 @@ function create() {
     key_S = game.input.keyboard.addKey(Phaser.Keyboard.S);
     key_D = game.input.keyboard.addKey(Phaser.Keyboard.D);
     
+    /** Loop **/
     game.time.events.loop(Phaser.Timer.SECOND, eventLoop, this);
     
 }
 
 function eventLoop() {
-
     counter++;
 
     if (counter % 2 === 0) {
         var i = Math.floor(Math.random() * 12);
         createStar(i * 70, 0);    
     }
-
+    
 }
 
+/**
+ * Update
+ **/
 var jumpTimer = 0;
 var accelerateTimer = 0;
 
@@ -125,16 +135,39 @@ function update() {
 
     //  Collide the player and the stars with the platforms
     game.physics.arcade.collide(player, platforms);
+    game.physics.arcade.collide(baddie, platforms);
     game.physics.arcade.collide(stars, platforms);
+    game.physics.arcade.collide(tetrominos, player);
+    game.physics.arcade.overlap(baddie, tetrominos, baddieDie);
 
-    //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
+    
     game.physics.arcade.overlap(player, stars, collectStar, null, this);
+    game.physics.arcade.overlap(player, baddie, playerDie, null, this);
+    
+    game.physics.arcade.overlap(tetromino, platforms, tetrominoFreeze, null, this);
+    game.physics.arcade.collide(tetromino, tetrominos, tetrominoFreeze);
 
     //  Reset the players velocity (movement)
     player.body.velocity.x = 0;
+    game.physics.arcade.moveToObject(baddie, player);
+    
+    /** Move Tetronimo **/
+    if (cursors.left.isDown) {
+        tetromino.body.velocity.x = -150;
+    } else if (cursors.right.isDown) {
+        tetromino.body.velocity.x = 150;
+    } else {
+        tetromino.body.velocity.x = 0;
+    }
+    
+    if (spacebar.isDown) {
+        tetromino.body.velocity.y = 1000; //@TODO should instead totally drop down and become immovable and next tetronimo should begin
+    } else {
+        tetromino.body.velocity.y = 100;
+    }
 
-    if (cursors.left.isDown || key_A.isDown)
-    {
+    /** Move Player **/
+    if (key_A.isDown) {
         if (accelerateTimer === 0) {
             //  start move to the left
             accelerateTimer = 1;
@@ -146,8 +179,7 @@ function update() {
         }
         
         player.animations.play('left');
-    } else if (cursors.right.isDown || key_D.isDown)
-    {
+    } else if ( key_D.isDown) {
         if (accelerateTimer === 0) {
             // start move to the right
             accelerateTimer = 1;
@@ -172,8 +204,7 @@ function update() {
     }
     
     //  Jump
-    if (cursors.up.isDown || spacebar.isDown || key_W.isDown)
-    {
+    if (key_W.isDown) {
         if (player.body.touching.down && jumpTimer === 0) {
             // jump is allowed to start
             jumpTimer = 1;
@@ -201,6 +232,12 @@ function createStar(x, y) {
     star.body.bounce.y = 0.7 + Math.random() * 0.2;
 }
 
+function createTetromino() {
+    tetromino = tetrominos.create(400, 0, 'tetromino');
+    tetromino.body.gravity.y = 25;
+    return tetromino;
+}
+
 function collectStar (player, star) {
     
     // Removes the star from the screen
@@ -210,6 +247,20 @@ function collectStar (player, star) {
     score += 10;
     scoreText.text = 'Score: ' + score;
 
+}
+
+function playerDie (player, baddie) {
+    player.kill();
+}
+
+function baddieDie (baddie, tetromino) {
+    baddie.kill();
+}
+
+function tetrominoFreeze (tetromino, foo) {
+    tetromino.body.static = true;
+    tetromino.body.moves = false;
+    createTetromino();
 }
 
 </script>
