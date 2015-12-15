@@ -24,6 +24,7 @@ var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create
 function preload() {
 
     game.load.image('sky', 'assets/sky.png');
+    game.load.image('grid', 'assets/grid_32.png');
     game.load.image('ground', 'assets/platform.png');
     game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
     game.load.image('domino', 'assets/domino.png');
@@ -52,6 +53,7 @@ function create() {
 
     /** Background **/
     game.add.sprite(0, 0, 'sky');
+    game.add.sprite(0, 0, 'grid');
 
     /** Platforms **/
     platforms = game.add.group(); //  The platforms group contains the ground and the 2 ledges we can jump on
@@ -77,7 +79,7 @@ function create() {
     player.animations.add('right', [5, 6, 7, 8], 10, true);
     
     /** Omino **/
-    omino = game.add.sprite(300, 0, 'domino');
+    omino = game.add.sprite(0, 0, 'domino');
     
     /** Baddie **/
     baddie = game.add.sprite(game.world.width - 200, 0, 'baddie');
