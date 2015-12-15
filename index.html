@@ -25,7 +25,6 @@ function preload() {
 
     game.load.image('sky', 'assets/sky.png');
     game.load.image('ground', 'assets/platform.png');
-    game.load.image('star', 'assets/star.png');
     game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
     game.load.image('domino', 'assets/domino.png');
     game.load.spritesheet('baddie', 'assets/baddie.png', 32, 32);
@@ -38,7 +37,6 @@ var ominoFloor = 512;
 var platforms;
 var cursors;
 var baddie;
-var stars;
 var score = 0;
 var scoreText;
 
@@ -90,12 +88,6 @@ function create() {
     baddie.animations.add('left', [0, 1], 4, true);
     baddie.animations.add('right', [3, 2], 4, true);
 
-    /** Stars **/
-    stars = game.add.group(); //  Finally some stars to collect
-    stars.enableBody = true; //  We will enable physics for any star that is created in this group
-    //  Here we'll create 12 of them evenly spaced apart
-    for (var i = 0; i < 12; i++) { createStar(i * 70, 0); }
-
     /** Score **/
     scoreText = game.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
 
@@ -120,12 +112,6 @@ function create() {
 function eventLoop() {
     counter++;
     ominoDown(omino);
-
-    if (counter % 2 === 0) {
-        var i = Math.floor(Math.random() * 12);
-        createStar(i * 70, 0);    
-    }
-    
 }
 
 /**
@@ -136,13 +122,10 @@ var accelerateTimer = 0;
 
 function update() {
 
-    //  Collide the player and the stars with the platforms
     game.physics.arcade.collide(player, platforms);
     game.physics.arcade.collide(baddie, platforms);
-    game.physics.arcade.collide(stars, platforms);
     if (omino.overlap(baddie)) { baddieDie(baddie, omino); }
     
-    game.physics.arcade.overlap(player, stars, collectStar, null, this);
     game.physics.arcade.overlap(player, baddie, playerDie, null, this);
 
     //  Reset the players velocity (movement)
@@ -194,24 +177,6 @@ function update() {
         jumpTimer = 0;
     }
 
-}
-
-function createStar(x, y) {
-    //  Create a star inside of the 'stars' group
-    var star = stars.create(x, y, 'star');
-
-    //  Let gravity do its thing
-    star.body.gravity.y = 300;
-
-    //  This just gives each star a slightly random bounce value
-    star.body.bounce.y = 0.7 + Math.random() * 0.2;
-}
-
-function collectStar (player, star) {
-    star.kill();
-    
-    score += 10;
-    scoreText.text = 'Score: ' + score;
 }
 
 function playerDie (player, baddie) { player.kill(); }
