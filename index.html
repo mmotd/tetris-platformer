@@ -71,6 +71,7 @@ function create() {
 
     /** Player **/
     player = game.add.sprite(32, game.world.height - 150, 'dude'); // The player and its settings
+    player.scale.setTo(0.5, 0.5);
     game.physics.arcade.enable(player); //  We need to enable physics on the player
     player.body.bounce.y = 0.2; //  Player physics properties. Give the little guy a slight bounce.
     player.body.gravity.y = 1500;
